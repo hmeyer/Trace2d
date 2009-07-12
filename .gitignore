@@ -1,0 +1,8 @@
+build_*
+Doxyfile
+*.kdevelop*
+*[a-z]~
+Makefile
+src/glade
+*.swp
+*.bak
