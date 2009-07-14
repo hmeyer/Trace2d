@@ -4,16 +4,21 @@
 #include "watershed.h"
 #include <iostream>
 
-#include <itkNoiseImageFilter.h>
+#include <itkRescaleIntensityImageFilter.h>
+#include <itkComposeRGBImageFilter.h>
+
+
 
 template< class TImage >
 WaterShedSegmentor< TImage >::WaterShedSegmentor() {
 	casterI2V = CastI2VFilterType::New();
 	casterV2I = CastV2IFilterType::New();
 	diffusion = DiffusionFilterType::New();
-	gradient = GradientMagnitudeFilterType::New();
+	gradient = GradientMagnitudeImageFilterType::New();
 
 	gradient->SetInput( diffusion->GetOutput());
+	gradient->SetUsePrincipleComponents( true );
+
 	diffusion->SetInput(casterI2V->GetOutput());
 	casterV2I->SetInput(diffusion->GetOutput());
 }
@@ -25,11 +30,32 @@ void WaterShedSegmentor< TImage >::SetInput( TImagePointer inp) {
 
 template< class TImage >
 typename TImage::Pointer WaterShedSegmentor< TImage >::GetFiltered() {
-	casterV2I->Update();
-	TImagePointer result = casterV2I->GetOutput();
+//	casterV2I->Update();
+//	TImagePointer result = casterV2I->GetOutput();
 
-	gradient->SetUsePrincipleComponents(atoi(argv[7]));
+//	gradient->Update();
+//	TImagePointer result = gradient->GetOutput();
 
+typedef unsigned char  MonoPixelType;
+typedef itk::Image<MonoPixelType, 2>  MonoImageType;
+
+	typedef typename itk::RescaleIntensityImageFilter< ScalarImageType, MonoImageType > RescaleFilterType;
+	typename RescaleFilterType::Pointer rescaler = RescaleFilterType::New();
+	rescaler->SetOutputMinimum( itk::NumericTraits< MonoPixelType >::min() );
+	rescaler->SetOutputMaximum( itk::NumericTraits< MonoPixelType >::max() );
+	rescaler->SetInput( gradient->GetOutput() );
+	
+	typedef typename itk::ComposeRGBImageFilter< MonoImageType, TImage > ComposeRGBImageFilterType;
+	typename ComposeRGBImageFilterType::Pointer composer = ComposeRGBImageFilterType::New();
+	
+	composer->SetInput(0, rescaler->GetOutput() );
+	composer->SetInput(1, rescaler->GetOutput() );
+	composer->SetInput(2, rescaler->GetOutput() );
+	composer->Update();
+
+	TImagePointer result = composer->GetOutput();
+	
+	
 
 	return result;
 }

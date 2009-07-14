@@ -11,20 +11,21 @@
 #include "itkimagetypes.h"
 
 typedef unsigned long LabelPixelType;
-typedef itk::Image<LabelPixelType, 2>   LabeledImageType;
-typedef float LabelPixelType;
+typedef itk::Image<LabelPixelType, 2>   Labeled2dImageType;
+typedef float ScalarPixelType;
 typedef itk::Image<ScalarPixelType, 2>   ScalarImageType;
 
 template <class TImage>
 class WaterShedSegmentor {
 	typedef typename TImage::Pointer TImagePointer;
+	typedef typename TImage::PixelType TImagePixelType;
 	typedef itk::Vector<float, 3>          VectorPixelType;
 	typedef itk::Image<VectorPixelType, 2> VectorImageType;
 	typedef itk::VectorCastImageFilter<TImage, VectorImageType> CastI2VFilterType;
 	typedef itk::VectorCastImageFilter<VectorImageType, TImage > CastV2IFilterType;
 	typedef itk::VectorCurvatureAnisotropicDiffusionImageFilter<VectorImageType, VectorImageType> DiffusionFilterType;
 //	typedef itk::VectorGradientAnisotropicDiffusionImageFilter<VectorImageType, VectorImageType> DiffusionFilterType;
-	typedef itk::VectorGradientMagnitudeImageFilter< VectorImageType > GradientMagnitudeImageFilterType;
+	typedef itk::VectorGradientMagnitudeImageFilter< VectorImageType, ScalarPixelType, ScalarImageType > GradientMagnitudeImageFilterType;
 //	typedef itk::WatershedImageFilter<ScalarImageType> WatershedFilterType;
 public:
 	WaterShedSegmentor();
@@ -37,7 +38,7 @@ private:
 	typename CastI2VFilterType::Pointer casterI2V;
 	typename CastV2IFilterType::Pointer casterV2I;
 	typename DiffusionFilterType::Pointer diffusion;
-	typename GradientMagnitudeFilterType::Pointer gradient;
+	typename GradientMagnitudeImageFilterType::Pointer gradient;
 };
 
 #include "watershed.cpp.h"
