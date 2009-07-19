@@ -8,6 +8,8 @@
 #include <itkScalarToRGBPixelFunctor.h>
 #include <itkVectorCastImageFilter.h>
 #include "itkWatershedImageFilter.h"
+#include <itkScalarToRGBPixelFunctor.h>
+#include <itkUnaryFunctorImageFilter.h>
 #include "itkimagetypes.h"
 
 typedef unsigned long LabelPixelType;
@@ -26,7 +28,7 @@ class WaterShedSegmentor {
 	typedef itk::VectorCurvatureAnisotropicDiffusionImageFilter<VectorImageType, VectorImageType> DiffusionFilterType;
 //	typedef itk::VectorGradientAnisotropicDiffusionImageFilter<VectorImageType, VectorImageType> DiffusionFilterType;
 	typedef itk::VectorGradientMagnitudeImageFilter< VectorImageType, ScalarPixelType, ScalarImageType > GradientMagnitudeImageFilterType;
-//	typedef itk::WatershedImageFilter<ScalarImageType> WatershedFilterType;
+	typedef itk::WatershedImageFilter<ScalarImageType> WatershedFilterType;
 public:
 	WaterShedSegmentor();
 	void SetInput( TImagePointer inp);
@@ -39,6 +41,7 @@ private:
 	typename CastV2IFilterType::Pointer casterV2I;
 	typename DiffusionFilterType::Pointer diffusion;
 	typename GradientMagnitudeImageFilterType::Pointer gradient;
+	typename WatershedFilterType::Pointer watershed;
 };
 
 #include "watershed.cpp.h"

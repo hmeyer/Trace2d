@@ -4,8 +4,7 @@
 #include "watershed.h"
 #include <iostream>
 
-#include <itkRescaleIntensityImageFilter.h>
-#include <itkComposeRGBImageFilter.h>
+#include "colormapper.h"
 
 
 
@@ -15,6 +14,11 @@ WaterShedSegmentor< TImage >::WaterShedSegmentor() {
 	casterV2I = CastV2IFilterType::New();
 	diffusion = DiffusionFilterType::New();
 	gradient = GradientMagnitudeImageFilterType::New();
+	watershed = WatershedFilterType::New();
+	
+
+	watershed->SetInput( gradient->GetOutput());
+
 
 	gradient->SetInput( diffusion->GetOutput());
 	gradient->SetUsePrincipleComponents( true );
@@ -30,31 +34,22 @@ void WaterShedSegmentor< TImage >::SetInput( TImagePointer inp) {
 
 template< class TImage >
 typename TImage::Pointer WaterShedSegmentor< TImage >::GetFiltered() {
-//	casterV2I->Update();
-//	TImagePointer result = casterV2I->GetOutput();
 
-//	gradient->Update();
-//	TImagePointer result = gradient->GetOutput();
+	gradient->GetOutput();
+	
+
 
 typedef unsigned char  MonoPixelType;
 typedef itk::Image<MonoPixelType, 2>  MonoImageType;
+	typedef itk::Functor::ScalarToRGBPixelFunctor<LabelPixelType> ColorMapFunctorType;
+	typedef itk::UnaryFunctorImageFilter<Labeled2dImageType,
+	TImage, ColorMapFunctorType> ColorMapFilterType;
+	typename ColorMapFilterType::Pointer colormapper = ColorMapFilterType::New();
+	colormapper->SetInput( watershed->GetOutput());
+	colormapper->Update();
 
-	typedef typename itk::RescaleIntensityImageFilter< ScalarImageType, MonoImageType > RescaleFilterType;
-	typename RescaleFilterType::Pointer rescaler = RescaleFilterType::New();
-	rescaler->SetOutputMinimum( itk::NumericTraits< MonoPixelType >::min() );
-	rescaler->SetOutputMaximum( itk::NumericTraits< MonoPixelType >::max() );
-	rescaler->SetInput( gradient->GetOutput() );
-	
-	typedef typename itk::ComposeRGBImageFilter< MonoImageType, TImage > ComposeRGBImageFilterType;
-	typename ComposeRGBImageFilterType::Pointer composer = ComposeRGBImageFilterType::New();
-	
-	composer->SetInput(0, rescaler->GetOutput() );
-	composer->SetInput(1, rescaler->GetOutput() );
-	composer->SetInput(2, rescaler->GetOutput() );
-	composer->Update();
+	TImagePointer result = colormapper->GetOutput();
 
-	TImagePointer result = composer->GetOutput();
-	
 	
 
 	return result;
@@ -68,11 +63,13 @@ void WaterShedSegmentor< TImage >::SetNumberOfIterations( unsigned int Iteration
 template< class TImage >
 void WaterShedSegmentor< TImage >::SetConductanceParameter( double Conductance ) {
 	diffusion->SetConductanceParameter( Conductance );
+	watershed->SetLevel( Conductance );
 }
 
 template< class TImage >
 void WaterShedSegmentor< TImage >::SetTimeStep( double TimeStep ) {
 	diffusion->SetTimeStep( TimeStep );
+	watershed->SetThreshold( TimeStep );
 }
 
 /*
