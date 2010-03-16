@@ -1,6 +1,11 @@
 SET(MYLIBS "~/devel/myLibs")
-SET(SRC imageArea.h imageArea.cpp itkimagetypes.h
-	watershed.cpp.h watershed.h
+SET(SRC main.cpp
+	imageArea.h imageArea.cpp 
+	itkimagetypes.h
+	watershed.cpp watershed.h
+	colormapper.cpp colormapper.h
+	labelSelectorPixelAccessor.cpp labelSelectorPixelAccessor.h
+	trace.cpp trace.h
 	glade/traceUI_glade.cc  glade/traceUI_glade.hh glade/traceUI.hh
 	${MYLIBS}/itkbasics.h ${MYLIBS}/toString.h)
 FIND_PACKAGE(ITK REQUIRED)
@@ -12,11 +17,16 @@ ENDIF(ITK_FOUND)
 FIND_PACKAGE(Boost COMPONENTS signals REQUIRED)
 INCLUDE(${Boost_INCLUDE_DIR})
 
+
+FIND_PATH(POTRACE_PATH potracelib.h
+	../../potrace/potrace-1.8/src
+)
+
 link_directories(
-    ${GTKMM_LIBRARY_DIRS}  )
+    ${GTKMM_LIBRARY_DIRS} ${POTRACE_PATH} )
 
 include_directories( ${MYLIBS}
-    ${GTKMM_INCLUDE_DIRS}  )
+    ${GTKMM_INCLUDE_DIRS} ${POTRACE_PATH}  )
 
 SET(Libraries
  ITKCommon
@@ -24,12 +34,13 @@ SET(Libraries
  ITKIO
  ${GTKMM_LIBRARIES}
  ${Boost_LIBRARIES}
+ potrace
 )
 
 
 SET(CurrentExe "trace2d")
 add_executable(${CurrentExe}
-    main.cpp ${SRC}
+    ${SRC}
     )
 
 target_link_libraries(${CurrentExe}

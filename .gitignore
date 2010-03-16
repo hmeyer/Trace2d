@@ -1,6 +1,7 @@
 build_*
 Doxyfile
 *.kdevelop*
+*.kdev4
 *[a-z]~
 Makefile
 src/glade

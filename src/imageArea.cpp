@@ -21,7 +21,7 @@ UpdateMapType UpdateMap;
 
 
 
-ImageArea::ImageArea(int updateGroup) :scale(1.0), updateGroup( updateGroup ) {
+ImageArea::ImageArea(int updateGroup) :scale(1.0), tx(0), ty(0), updateGroup( updateGroup ) {
 	add_events(Gdk::SCROLL_MASK);
 	UpdateMapType::iterator umi = UpdateMap.find( updateGroup );
 	if (umi == UpdateMap.end()) UpdateMap[ updateGroup ] = ImageAreaUpdaterPointer( new ImageAreaUpdater() );

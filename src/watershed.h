@@ -11,16 +11,13 @@
 #include <itkScalarToRGBPixelFunctor.h>
 #include <itkUnaryFunctorImageFilter.h>
 #include "itkimagetypes.h"
+#include <vector>
 
-typedef unsigned long LabelPixelType;
-typedef itk::Image<LabelPixelType, 2>   Labeled2dImageType;
-typedef float ScalarPixelType;
-typedef itk::Image<ScalarPixelType, 2>   ScalarImageType;
 
-template <class TImage>
 class WaterShedSegmentor {
-	typedef typename TImage::Pointer TImagePointer;
-	typedef typename TImage::PixelType TImagePixelType;
+	typedef ColorImageType TImage;
+	typedef TImage::Pointer TImagePointer;
+	typedef TImage::PixelType TImagePixelType;
 	typedef itk::Vector<float, 3>          VectorPixelType;
 	typedef itk::Image<VectorPixelType, 2> VectorImageType;
 	typedef itk::VectorCastImageFilter<TImage, VectorImageType> CastI2VFilterType;
@@ -36,14 +33,19 @@ public:
 	void SetNumberOfIterations( unsigned int Iterations );
 	void SetConductanceParameter( double Conductance );
 	void SetTimeStep( double TimeStep );
+	unsigned int getNumLabels() const;
+	LabelPixelType getLabel( unsigned int labelIndex ) const;
+	Labeled2dImageType::Pointer getWaterShedImage() const;
 private:
-	typename CastI2VFilterType::Pointer casterI2V;
-	typename CastV2IFilterType::Pointer casterV2I;
-	typename DiffusionFilterType::Pointer diffusion;
-	typename GradientMagnitudeImageFilterType::Pointer gradient;
-	typename WatershedFilterType::Pointer watershed;
+	TImagePointer input;
+	Labeled2dImageType::Pointer labelImage;
+	std::vector< LabelPixelType > labelVector;
+	CastI2VFilterType::Pointer casterI2V;
+	CastV2IFilterType::Pointer casterV2I;
+	DiffusionFilterType::Pointer diffusion;
+	GradientMagnitudeImageFilterType::Pointer gradient;
+	WatershedFilterType::Pointer watershed;
 };
 
-#include "watershed.cpp.h"
 
 #endif
