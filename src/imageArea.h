@@ -2,24 +2,35 @@
 #define IMAGEAREA_H
 
 #include <gtkmm/drawingarea.h>
-#include "itkimagetypes.h"
+#include <cairomm/context.h>
 
 
+#include <boost/signals.hpp>
+#include <boost/shared_ptr.hpp>
+
+typedef boost::signal<void (double,double,double)> ImageAreaUpdater;
+typedef boost::shared_ptr< ImageAreaUpdater > ImageAreaUpdaterPointer;
+typedef Cairo::RefPtr<Cairo::Context> CairoContextPointer;
 
 class ImageArea : public Gtk::DrawingArea
 {
 public:
-  ImageArea(int updateGroup = 0);
+  ImageArea();
   virtual ~ImageArea();
-  void setImage(ColorRGBImageType::Pointer img);
+  void setUpdateGroup( const ImageArea &other );
 protected:
   //Override default signal handler:
-  Cairo::RefPtr< Cairo::ImageSurface > image_surface_ptr_;
-  double windowScale, scale, tx, ty;
-  int updateGroup;
   virtual bool on_expose_event(GdkEventExpose* event);
   virtual bool on_scroll_event (GdkEventScroll* ev);
-  void updateArea( double newWindowScale, double newScale, double newTx, double newTy );
+  virtual bool on_button_press_event(GdkEventButton *event);
+  virtual bool on_motion_notify_event(GdkEventMotion *event);
+  virtual void drawContent( CairoContextPointer c ) = 0;
+  void updateArea(double newScale, double newTx, double newTy );
+
+  double scale, tx, ty;
+  double lastX, lastY;
+  ImageAreaUpdaterPointer updatePointer;
+  boost::signals::scoped_connection myUpdateConnection;
 };
 
 #endif // IMAGEAREA_H

@@ -1,4 +1,4 @@
-build_*
+build*
 Doxyfile
 *.kdevelop*
 *.kdev4

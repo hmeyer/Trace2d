@@ -2,23 +2,32 @@
 #include "glade/traceUI.hh"
 #include <boost/bind.hpp>
 #include <itkbasics.h>
-#include "imageArea.h"
+#include "BitmapImageArea.h"
+#include "VectorImageArea.h"
 #include "itkimagetypes.h"
 #include "watershed.h"
 #include "trace.h"
+#include <boost/foreach.hpp>
 
 using boost::bind;
 using boost::ref;
 using namespace std;
 
 
-void tracer(WaterShedSegmentor &wss) {
+void tracer(WaterShedSegmentor &wss, VectorImageArea &via) {
 cerr << __FILE__ << "[" << __LINE__ << "]:" << __FUNCTION__ << ": begin" << endl;;
-  set< LabelPixelType > labSet;
+  LabelSet labSet;
+  ShapeList slist;
   if (wss.getNumLabels() > 0) {
     labSet.insert( wss.getLabel(0) );
 cerr << __FILE__ << "[" << __LINE__ << "]:" << __FUNCTION__ << ": tracing..." << endl;;
-    traceLabels( wss.getWaterShedImage(), labSet );
+    traceLabels( wss.getWaterShedImage(), labSet, slist );
+cerr << __FILE__ << "[" << __LINE__ << "]:" << __FUNCTION__ << ": tracing finished:" << slist.size() << " curves" << endl;;
+    via.clearVectors();
+    BOOST_FOREACH( VectorShape &vs, slist ) {
+      via.addVector( vs );
+    }
+    via.queue_draw();
   }
 cerr << __FILE__ << "[" << __LINE__ << "]:" << __FUNCTION__ << ": end" << endl;;
 }
@@ -33,12 +42,17 @@ int main(int argc, char *argv[]) {
 	Gtk::Main kit(&argc, &argv);
 	traceUI myTraceUI;
 
-	ImageArea inputImage;
-	ImageArea filteredImage;
+	BitmapImageArea inputImage;
+	BitmapImageArea filteredImage;
+	filteredImage.setUpdateGroup( inputImage );
+	VectorImageArea tracedImage;
+	tracedImage.setUpdateGroup( filteredImage );
 	myTraceUI.hboxViewer->add( inputImage );
 	myTraceUI.hboxViewer->add( filteredImage );
+	myTraceUI.hboxViewer->add( tracedImage );
 	inputImage.show();
 	filteredImage.show();
+	tracedImage.show();
 
 	ColorRGBImageType::Pointer input = ImageRead<ColorRGBImageType>( argv[1] );
 	WaterShedSegmentor myWaterShed;
@@ -58,11 +72,11 @@ int main(int argc, char *argv[]) {
 
 
 	myTraceUI.buttonFilter->signal_clicked().connect( 
-		bind( &ImageArea::setImage, &filteredImage, 
+		bind( &BitmapImageArea::setBitmap, &filteredImage, 
 			bind( &WaterShedSegmentor::GetFiltered, ref(myWaterShed) ) ) );
 
 	myTraceUI.buttonFilter->signal_clicked().connect( 
-		bind( &tracer, ref(myWaterShed) ) );
+		bind( &tracer, ref(myWaterShed), boost::ref(tracedImage) ) );
 			
 	myTraceUI.buttonFilter->signal_clicked().connect( 
 		bind( &ImageArea::queue_draw, &filteredImage ) );
@@ -70,8 +84,8 @@ int main(int argc, char *argv[]) {
 	myTraceUI.buttonExit->signal_clicked().connect( 
 		bind( &Gtk::Main::quit ) );
 
-	inputImage.setImage( input );
-	filteredImage.setImage( input );
+	inputImage.setBitmap( input );
+	filteredImage.setBitmap( input );
 	
 	kit.run( myTraceUI );
   	return EXIT_SUCCESS;

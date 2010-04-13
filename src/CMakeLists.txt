@@ -1,7 +1,7 @@
 SET(MYLIBS "~/devel/myLibs")
 SET(SRC main.cpp
-	imageArea.h imageArea.cpp 
-	itkimagetypes.h
+	imageArea.h imageArea.cpp  BitmapImageArea.cpp VectorImageArea.cpp
+	itkimagetypes.h VectorShape.cpp
 	watershed.cpp watershed.h
 	colormapper.cpp colormapper.h
 	labelSelectorPixelAccessor.cpp labelSelectorPixelAccessor.h

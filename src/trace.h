@@ -3,12 +3,15 @@
 
 #include "itkimagetypes.h"
 #include <set>
-
 #include <boost/scoped_array.hpp>
+#include "VectorShape.h"
+#include <list>
 
-void callpotrace(void);
 
-void traceLabels( Labeled2dImageType::Pointer labelImage, const std::set< LabelPixelType > &labels );
+typedef std::set< LabelPixelType > LabelSet;
+typedef std::list< VectorShape > ShapeList;
+
+void traceLabels( Labeled2dImageType::Pointer labelImage, const LabelSet &labels, ShapeList &shapelist );
 
 
 

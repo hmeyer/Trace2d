@@ -12,6 +12,8 @@ extern "C" {
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include "VectorShape.h"
+
 
 using boost::scoped_array;
 using boost::scoped_ptr;
@@ -24,21 +26,23 @@ public:
   template< class ImageConstPointerType >
   void setImage( ImageConstPointerType binaryImage );
   boost::signals::connection doOnProgress( const ProgressSignalType::slot_type &slot);
-  void printPath(std::ostream &out);
+  void printPath(std::ostream &out) const;
   void trace(void);
+  void pathToShapeList( ShapeList &sl ) const;
 protected:
-  void internalPrintPath(std::ostream &out, const potrace_path_t *p, const std::string &intend = std::string());
+  static void internalPrintPath(std::ostream &out, const potrace_path_t *p, const std::string &intend = std::string());
+  static void internalPathToShapeList(ShapeList &sl, const potrace_path_t *p);
   static void progress_callback( double progress, void *data );
   potrace_param_t getParams(void) const;
 
   ProgressSignalType m_progress;
   scoped_array< potrace_word > m_bitmap;
-  shared_ptr< potrace_param_t > m_potrace_param;
-  shared_ptr< potrace_state_t > m_potrace_state;
+  shared_ptr< potrace_param_t > m_potrace_param; //needed shared_ptr for custom deleters
+  shared_ptr< potrace_state_t > m_potrace_state; //needed shared_ptr for custom deleters
   scoped_ptr< potrace_bitmap_t > m_potrace_bitmap;
 };
 
-void TraceBitmap::printPath(std::ostream &out) {
+void TraceBitmap::printPath(std::ostream &out) const {
   if (m_potrace_state) {
     if (m_potrace_state->status == POTRACE_STATUS_OK)
       internalPrintPath(out, m_potrace_state->plist);
@@ -47,28 +51,28 @@ void TraceBitmap::printPath(std::ostream &out) {
   }
 }
 
-void printPoint( std::ostream &out, const potrace_dpoint_t &p ) {
+std::ostream& operator<< ( std::ostream& out, const potrace_dpoint_t &p ) {
     out << "[" << p.x << "," << p.y << "]";
+    return out;
 }
 
-void TraceBitmap::internalPrintPath(std::ostream &out, const potrace_path_t *p, const std::string &intend) {
-  if (p) {
-    out << intend << "curve[" << (char)p->sign <<"]: ";
-    const potrace_curve_t &cu = p->curve;
-    printPoint( out, cu.c[ cu.n -1 ][2] );
+std::ostream& operator<< ( std::ostream& out, const potrace_curve_t &cu ) {
+    out <<  cu.c[ cu.n -1 ][2];
     for(int i = 0; i< cu.n; i++) {
       if (cu.tag[i] == POTRACE_CORNER) {
-	out << "->"; printPoint( out, cu.c[i][1] );
-	out << "->"; printPoint( out, cu.c[i][2] );
+	out << "->" << cu.c[i][1] << "->" << cu.c[i][2];
       } else if (cu.tag[i] == POTRACE_CURVETO) {
-	out << "~"; printPoint( out, cu.c[i][0] );
-	out << "~"; printPoint( out, cu.c[i][1] );
-	out << "~"; printPoint( out, cu.c[i][2] );
+	out << "~" << cu.c[i][0] << "~" << cu.c[i][1] << "~" << cu.c[i][2];
       } else {
 	out << "[unknown segment]";
       }
     }
-    out << std::endl;
+    return out;
+}
+
+void TraceBitmap::internalPrintPath(std::ostream &out, const potrace_path_t *p, const std::string &intend) {
+  if (p) {
+    out << intend << (char)p->sign << "curve[" << p->area <<"]: " << p->curve << std::endl;
     if (p->childlist) internalPrintPath( out, p->childlist, intend+"  ");
     if (p->sibling) internalPrintPath( out, p->sibling, intend);
   } else out << "NULL" << std::endl;
@@ -107,30 +111,31 @@ void TraceBitmap::setImage( ImageConstPointerType binaryImage ) {
 	
 	dy = w / ( sizeof( potrace_word ) * 8 ) 
 		+ (( w % ( sizeof( potrace_word ) * 8 )) ? 1:0);
+	int dy_bits = dy * sizeof( potrace_word ) * 8;
 	
 	m_bitmap.reset( new potrace_word[ dy * h ]);
 	m_potrace_bitmap->map = m_bitmap.get();
 	
 	IteratorType it( binaryImage, imageRegion ); it.GoToBegin();
 	potrace_word pw;
-	unsigned int pw_mask = (2 << sizeof( potrace_word))-1;
-	unsigned int pidx = 0;
+	unsigned int pw_mask = (sizeof( potrace_word)*8)-1;
+	unsigned int pIdx = 0;
 	for(int y = 0; y < h; y++) {
 	  pw = 0;
 	  int x;
 	  for(x = 0; x < w; x++) {
 	    if (it.Get()) pw|=1;
 	    if ((x & pw_mask) == pw_mask) {
-	      m_bitmap[pidx++] = pw;
+	      m_bitmap[pIdx++] = pw;
 	      pw = 0;
 	    } else {
 	      pw <<= 1;
 	    }
 	    ++it;
 	  }
-	  for(; x < dy; x++) {
+	  for(; x < dy_bits; x++) {
 	    if ((x & pw_mask) == pw_mask) {
-	      m_bitmap[pidx++] = pw;
+	      m_bitmap[pIdx++] = pw;
 	      pw = 0;
 	    } else {
 	      pw <<= 1;
@@ -146,11 +151,52 @@ void TraceBitmap::trace(void) {
   else throw std::runtime_error("did not set any image");
 }
 
+void TraceBitmap::pathToShapeList( ShapeList &sl ) const {
+  if (m_potrace_state) {
+    if (m_potrace_state->status == POTRACE_STATUS_OK)
+      internalPathToShapeList(sl, m_potrace_state->plist);
+    else
+      throw std::runtime_error("unsuccessful tracing");
+  }
+}
+
+void TraceBitmap::internalPathToShapeList(ShapeList &sl, const potrace_path_t *p) {
+  if (p) {
+    sl.push_back( VectorShape() );
+    VectorShape &vs = sl.back();
+    const potrace_curve_t &cu = p->curve;
+    for(int i = 0; i< cu.n; i++) {
+      vs.push_back( Segment() );
+      Segment &seg = vs.back();
+      if (cu.tag[i] == POTRACE_CORNER) {
+	seg.type = CornerSegment;
+	seg.w.x = cu.c[i][1].x;
+	seg.w.y = cu.c[i][1].y;
+	seg.endPoint.x = cu.c[i][2].x;
+	seg.endPoint.y = cu.c[i][2].y;
+      } else if (cu.tag[i] == POTRACE_CURVETO) {
+	seg.type = BezierSegment;
+	seg.u.x = cu.c[i][0].x;
+	seg.u.y = cu.c[i][0].y;
+	seg.w.x = cu.c[i][1].x;
+	seg.w.y = cu.c[i][1].y;
+	seg.endPoint.x = cu.c[i][2].x;
+	seg.endPoint.y = cu.c[i][2].y;
+      } else {
+	throw std::runtime_error("unknown segment type");
+      }
+    }
+    if (p->childlist) internalPathToShapeList( sl, p->childlist);
+    if (p->sibling) internalPathToShapeList( sl, p->sibling);
+  }
+}
+
+
 void writeProgress( float progress ) {
   std::cerr << "tracing: " << progress*100 << "%" << std::endl;
 }
 
-void traceLabels( Labeled2dImageType::Pointer labelImage, const std::set< LabelPixelType > &labels ) {
+void traceLabels( Labeled2dImageType::Pointer labelImage, const std::set< LabelPixelType > &labels, ShapeList &shapelist ) {
   typedef itk::ImageAdaptor<  Labeled2dImageType, LabelSelectorPixelAccessor > ImageAdaptorType;
   ImageAdaptorType::Pointer adaptor = ImageAdaptorType::New();
   LabelSelectorPixelAccessor accessor;
@@ -161,6 +207,7 @@ void traceLabels( Labeled2dImageType::Pointer labelImage, const std::set< LabelP
   tb.setImage( adaptor );
   tb.doOnProgress( boost::function< void (float) >( &writeProgress ));
   tb.trace();
-  tb.printPath( std::cerr );
+  tb.pathToShapeList( shapelist );
+  tb.printPath( std::cerr);
 }
 
