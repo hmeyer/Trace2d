@@ -26,19 +26,20 @@ TraceWindow::TraceWindow()
   connect(radioGauss,SIGNAL(toggled(bool)),this,SLOT(onParametersChanged()));
   connect(radioGA,SIGNAL(toggled(bool)),this,SLOT(onParametersChanged()));
   connect(radioCA,SIGNAL(toggled(bool)),this,SLOT(onParametersChanged()));
-  QSettings settings;
-  spinIterations->setValue( settings.value(iterationSettingName, 2).toInt() );
-  spinConductance->setValue( settings.value(conductanceSettingName, 0.25).toDouble() );
-  spinTimeStep->setValue( settings.value(timeStepSettingName, 1.0).toDouble() );
-  spinLevel->setValue( settings.value(levelSettingName, .1).toDouble() );
-  spinThreshold->setValue( settings.value(thresholdSettingName, .1).toDouble() );
-  spinGaussSigma->setValue( settings.value(gaussSigmaSettingName, 3).toDouble() );
-  int filterType = settings.value(filterTypeSettingName, ImageTracer::GaussFilter).toInt();
+  boost::shared_ptr< QSettings > startSettings( new QSettings );
+  spinIterations->setValue( startSettings->value(iterationSettingName, 2).toInt() );
+  spinConductance->setValue( startSettings->value(conductanceSettingName, 0.25).toDouble() );
+  spinTimeStep->setValue( startSettings->value(timeStepSettingName, 1.0).toDouble() );
+  spinLevel->setValue( startSettings->value(levelSettingName, .1).toDouble() );
+  spinThreshold->setValue( startSettings->value(thresholdSettingName, .1).toDouble() );
+  spinGaussSigma->setValue( startSettings->value(gaussSigmaSettingName, 3).toDouble() );
+  int filterType = startSettings->value(filterTypeSettingName, ImageTracer::GaussFilter).toInt();
   switch(filterType) {
-    case ImageTracer::GaussFilter: radioGauss->setChecked(true);;
-    case ImageTracer::CADiffusion: radioGA->setChecked(true);break;
-    case ImageTracer::GADiffusion: radioCA->setChecked(true);break;
+    case ImageTracer::GaussFilter: radioGauss->setChecked(true);break;
+    case ImageTracer::CADiffusion: radioCA->setChecked(true);break;
+    case ImageTracer::GADiffusion: radioGA->setChecked(true);break;
   }
+  settings = startSettings;
 }
 
 void TraceWindow::on_actionOpen_triggered() {
@@ -58,18 +59,19 @@ void TraceWindow::openImage(const std::string &fname) {
 }
 
 void TraceWindow::onParametersChanged() {
-  QSettings settings;
-  settings.setValue(iterationSettingName, spinIterations->value());
-  settings.setValue(conductanceSettingName, spinConductance->value());
-  settings.setValue(timeStepSettingName, spinTimeStep->value());
-  settings.setValue(levelSettingName, spinLevel->value());
-  settings.setValue(thresholdSettingName, spinThreshold->value());
-  settings.setValue(gaussSigmaSettingName, spinGaussSigma->value());
   ImageTracer::FilterType filter;
   if (radioGauss->isChecked()) filter = ImageTracer::GaussFilter;
   if (radioGA->isChecked()) filter = ImageTracer::GADiffusion;
   if (radioCA->isChecked()) filter = ImageTracer::CADiffusion;
-  settings.setValue(filterTypeSettingName, filter);
+  if (settings) {
+    settings->setValue(iterationSettingName, spinIterations->value());
+    settings->setValue(conductanceSettingName, spinConductance->value());
+    settings->setValue(timeStepSettingName, spinTimeStep->value());
+    settings->setValue(levelSettingName, spinLevel->value());
+    settings->setValue(thresholdSettingName, spinThreshold->value());
+    settings->setValue(gaussSigmaSettingName, spinGaussSigma->value());
+    settings->setValue(filterTypeSettingName, filter);
+  }
   tracer->setParameters( spinIterations->value(),
 			 spinConductance->value(),
 			 spinTimeStep->value(),
@@ -104,5 +106,4 @@ void TraceWindow::on_buttonZoomIn_clicked() {
 
 void TraceWindow::on_buttonZoomOut_clicked() {
   graphicsView->scale(.9, .9);
-  std::cerr << __FUNCTION__ << std::endl;
 }

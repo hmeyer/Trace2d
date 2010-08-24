@@ -7,6 +7,7 @@
 
 class ImageTracer;
 class GraphicsScene;
+class QSettings;
 
 class TraceWindow: public QMainWindow, private Ui::trace2d
 {
@@ -26,6 +27,7 @@ class TraceWindow: public QMainWindow, private Ui::trace2d
   private:
     boost::shared_ptr< ImageTracer > tracer;
     ITK2GraphicsScene imageConverter;
+    boost::shared_ptr< QSettings > settings;
 };
 
 #endif // TRACEWINDOW_H
