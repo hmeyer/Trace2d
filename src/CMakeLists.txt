@@ -2,9 +2,6 @@ SET(MYLIBS "~/devel/myLibs")
 SET(SRC itk2graphicsscene.cpp 
 	main.cpp
 	tracewindow.cpp
-#	imageArea.cpp 
-#	BitmapImageArea.cpp
-#	VectorImageArea.cpp
 	VectorShape.cpp
 	ImageTracer.cpp
 	colormapper.cpp
