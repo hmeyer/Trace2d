@@ -9,9 +9,8 @@
 
 
 typedef std::set< LabelPixelType > LabelSet;
-typedef std::list< VectorShape > ShapeList;
 
-void traceLabels( Labeled2dImageType::Pointer labelImage, const LabelSet &labels, ShapeList &shapelist );
+void traceLabels( Labeled2dImageType::Pointer labelImage, const LabelSet &labels, VectorShapeList &shapelist );
 
 
 

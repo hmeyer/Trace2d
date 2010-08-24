@@ -28,10 +28,10 @@ public:
   boost::signals::connection doOnProgress( const ProgressSignalType::slot_type &slot);
   void printPath(std::ostream &out) const;
   void trace(void);
-  void pathToShapeList( ShapeList &sl ) const;
+  void pathToShapeList( VectorShapeList &sl ) const;
 protected:
   static void internalPrintPath(std::ostream &out, const potrace_path_t *p, const std::string &intend = std::string());
-  static void internalPathToShapeList(ShapeList &sl, const potrace_path_t *p);
+  static void internalPathToShapeList(VectorShapeList &sl, const potrace_path_t *p);
   static void progress_callback( double progress, void *data );
   potrace_param_t getParams(void) const;
 
@@ -151,7 +151,7 @@ void TraceBitmap::trace(void) {
   else throw std::runtime_error("did not set any image");
 }
 
-void TraceBitmap::pathToShapeList( ShapeList &sl ) const {
+void TraceBitmap::pathToShapeList( VectorShapeList &sl ) const {
   if (m_potrace_state) {
     if (m_potrace_state->status == POTRACE_STATUS_OK)
       internalPathToShapeList(sl, m_potrace_state->plist);
@@ -160,7 +160,7 @@ void TraceBitmap::pathToShapeList( ShapeList &sl ) const {
   }
 }
 
-void TraceBitmap::internalPathToShapeList(ShapeList &sl, const potrace_path_t *p) {
+void TraceBitmap::internalPathToShapeList( VectorShapeList &sl, const potrace_path_t *p ) {
   if (p) {
     sl.push_back( VectorShape() );
     VectorShape &vs = sl.back();
@@ -196,7 +196,7 @@ void writeProgress( float progress ) {
   std::cerr << "tracing: " << progress*100 << "%" << std::endl;
 }
 
-void traceLabels( Labeled2dImageType::Pointer labelImage, const std::set< LabelPixelType > &labels, ShapeList &shapelist ) {
+void traceLabels( Labeled2dImageType::Pointer labelImage, const std::set< LabelPixelType > &labels, VectorShapeList &shapelist ) {
   typedef itk::ImageAdaptor<  Labeled2dImageType, LabelSelectorPixelAccessor > ImageAdaptorType;
   ImageAdaptorType::Pointer adaptor = ImageAdaptorType::New();
   LabelSelectorPixelAccessor accessor;

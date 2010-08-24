@@ -42,8 +42,8 @@ typedef itk::Image<MonoPixelType, 2>  MonoImageType;
 	watershed->Update();
 	labelImage = watershed->GetOutput();
 	LabelSetType labelSet;
-	colormapper.InitializeFilter( input, labelImage, labelSet );
-	labelVector.clear();
+//	colormapper.InitializeFilter( input, labelImage, labelSet );
+//	.clear();
 	for(LabelSetType::const_iterator si = labelSet.begin(); si != labelSet.end(); si++) labelVector.push_back(*si);
 
 	ColorMapFilterType::Pointer colormapfilter = ColorMapFilterType::New();

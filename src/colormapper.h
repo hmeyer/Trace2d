@@ -17,7 +17,7 @@ public:
 
   RGBPixelType operator()( const LabelPixelType &) const;
   bool operator!=( const ColorMapper &) const;
-  void InitializeFilter( const ColorRGBImageType::Pointer rgbImage, const Labeled2dImageType::Pointer labeledImage, LabelSetType &labelSet );
+  void InitializeFilter( ColorRGBImageType::ConstPointer rgbImage, Labeled2dImageType::ConstPointer labeledImage, LabelSetType &labelSet );
 private:
 	typedef unsigned long SumType;
 	typedef itk::RGBPixel< SumType > RGBSumType;

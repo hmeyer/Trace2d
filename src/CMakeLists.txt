@@ -1,39 +1,49 @@
 SET(MYLIBS "~/devel/myLibs")
-SET(SRC main.cpp
-	imageArea.h imageArea.cpp  BitmapImageArea.cpp VectorImageArea.cpp
-	itkimagetypes.h VectorShape.cpp
-	watershed.cpp watershed.h
-	colormapper.cpp colormapper.h
-	labelSelectorPixelAccessor.cpp labelSelectorPixelAccessor.h
-	trace.cpp trace.h
-	glade/traceUI_glade.cc  glade/traceUI_glade.hh glade/traceUI.hh
-	${MYLIBS}/itkbasics.h ${MYLIBS}/toString.h)
-FIND_PACKAGE(ITK REQUIRED)
-IF(ITK_FOUND)
-  INCLUDE(${ITK_USE_FILE})
-ENDIF(ITK_FOUND)
+SET(SRC itk2graphicsscene.cpp 
+	main.cpp
+	tracewindow.cpp
+#	imageArea.cpp 
+#	BitmapImageArea.cpp
+#	VectorImageArea.cpp
+	VectorShape.cpp
+	ImageTracer.cpp
+	colormapper.cpp
+	labelSelectorPixelAccessor.cpp
+	trace.cpp
+	)
 
-
-FIND_PACKAGE(Boost COMPONENTS signals REQUIRED)
-INCLUDE(${Boost_INCLUDE_DIR})
-
-
-FIND_PATH(POTRACE_PATH potracelib.h
-	../../potrace/potrace-1.8/src
-)
 
 link_directories(
     ${GTKMM_LIBRARY_DIRS} ${POTRACE_PATH} )
 
+INCLUDE(${ITK_USE_FILE})
+INCLUDE(${Boost_INCLUDE_DIR})
+INCLUDE(${QT_USE_FILE})
 include_directories( ${MYLIBS}
-    ${GTKMM_INCLUDE_DIRS} ${POTRACE_PATH}  )
+    ${POTRACE_PATH}  )
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+
+SET( CLIENT_MOC_SRCS
+  tracewindow.h
+)
+
+# build ui_XXX files from the XML-style .ui files
+FILE(GLOB QT4_UIS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ui/*.ui)
+QT4_WRAP_UI(SRC ${QT4_UIS})
+
+# this moc's the above variable and appends to the cxx sources
+QT4_WRAP_CPP(SRC ${CLIENT_MOC_SRCS})
+
 
 SET(Libraries
  ITKCommon
  ITKAlgorithms
  ITKIO
- ${GTKMM_LIBRARIES}
  ${Boost_LIBRARIES}
+ ${QT_LIBRARIES}
  potrace
 )
 
@@ -41,10 +51,12 @@ SET(Libraries
 SET(CurrentExe "trace2d")
 add_executable(${CurrentExe}
     ${SRC}
+    ${QT4_UIS_H}
     )
 
 target_link_libraries(${CurrentExe}
-    ${Libraries} )
+    ${Libraries}
+    )
 
 
 

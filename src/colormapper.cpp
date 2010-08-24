@@ -10,7 +10,7 @@ ColorMapper::operator()( const LabelPixelType & lp) const {
 	return avgColor.at(lp);
 }
 
-void ColorMapper::InitializeFilter( const ColorRGBImageType::Pointer rgbImage, const Labeled2dImageType::Pointer labeledImage, LabelSetType &labelSet ) {
+void ColorMapper::InitializeFilter( ColorRGBImageType::ConstPointer rgbImage, Labeled2dImageType::ConstPointer labeledImage, LabelSetType &labelSet ) {
 	if (rgbImage->GetLargestPossibleRegion() != labeledImage->GetLargestPossibleRegion()) { return; }
 	typedef itk::ImageRegionConstIteratorWithIndex< ColorRGBImageType > RGBIteratorType;
 	RGBIteratorType rgbIter( rgbImage, rgbImage->GetLargestPossibleRegion() );

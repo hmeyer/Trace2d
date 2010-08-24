@@ -1,7 +1,6 @@
 #ifndef VECTORSHAPE_H
 #define VECTORSHAPE_H
 
-#include <vector>
 #include <list>
 
 struct Point2D {
@@ -18,11 +17,13 @@ struct Segment {
   Point2D w;
   Point2D endPoint;
 };
-typedef std::vector< Segment > Curve;    
+typedef std::list< Segment > Curve;    
 
 class VectorShape: public Curve
 {
   public:
 };
+
+typedef std::list< VectorShape > VectorShapeList;
 
 #endif // VECTORSHAPE_H
